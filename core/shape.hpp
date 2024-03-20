@@ -17,7 +17,7 @@ class Shape {
 
         virtual Bounds3f ObjectBound() const = 0; // return bounds in ojbect space
         
-        Bounds3f WorldBound() const {
+        virtual Bounds3f WorldBound() const {
             return (*ObjectToWorld)(ObjectBound());
         }
 

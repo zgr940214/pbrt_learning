@@ -121,7 +121,7 @@ class Vector3 {
         Vector3<Ty>& operator*=(Ty v); 
         Vector3<Ty> operator/(Ty v) const;
         Vector3<Ty>& operator/=(Ty v);
-        Vector3<Ty>& operator-(); // unary operator -, negated all val;
+        Vector3<Ty> operator-() const; // unary operator -, negated all val;
     
 };
 

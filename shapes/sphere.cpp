@@ -101,10 +101,10 @@ bool Sphere::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect, b
     //calculate partial derivative of surface normal dn/du dn/dv (Weingarten equations)
 
     Vector3f d2Pduu = -phiMax * phiMax * Vector3f(pHit.x, pHit.y, 0);
-    Vector3f d2Pduv = (thetaMax - thetaMin) * pHit.z * phiMax *
-    Vector3f(-sinPhi, cosPhi, 0.);
+    Vector3f d2Pduv =
+        (thetaMax - thetaMin) * pHit.z * phiMax * Vector3f(-sinPhi, cosPhi, 0.);
     Vector3f d2Pdvv = -(thetaMax - thetaMin) * (thetaMax - thetaMin) *
-    Vector3f(pHit.x, pHit.y, pHit.z);
+                      Vector3f(pHit.x, pHit.y, pHit.z);
 
     Float E = Dot(dpdu, dpdu);
     Float F = Dot(dpdu, dpdv);

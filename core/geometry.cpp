@@ -239,11 +239,12 @@ Vector3<Ty>& Vector3<Ty>::operator/=(Ty v) {
 };
 
 template<typename Ty>
-Vector3<Ty>& Vector3<Ty>::operator-() {// unary operator -, negated all val
-    x = -x;
-    y = -y;
-    z = -z;
-    return *this;
+Vector3<Ty> Vector3<Ty>::operator-() const {// unary operator -, negated all val
+    Vector3f v;
+    v.x = -x;
+    v.y = -y;
+    v.z = -z;
+    return v;
 };
 
 

@@ -54,6 +54,8 @@ class Triangle : public Shape {
 
         Bounds3f ObjectBound() const override;
 
+        Bounds3f WorldBound() const override;
+
         bool Intersect(
             const Ray &ray, Float *tHit, 
             SurfaceInteraction *isect, 
