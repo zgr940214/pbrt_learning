@@ -36,7 +36,12 @@ class Curve : public Shape {
         bool IntersectP(const Ray &ray,
             bool testAlphaTexture = true) const;
         
+        bool recursiveIntersect(const Ray &ray, Float *tHit, 
+            SurfaceInteraction *isect, Point3f* cp, Transform ray2Object,
+            Float uMin, Float uMax, int maxDepth) const;
+        
         Float SurfaceArea() const;
+
 
         static Point3f BlossomBezier(const Point3f p[4], Float u0, Float u1,
                 Float u2) {
