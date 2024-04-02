@@ -19,11 +19,17 @@ bool Curve::Intersect(const Ray &r, Float *tHit,
         Ray ray = (*WorldToObject)(r, &oErr, &dErr);
         Point3f ctlPoint[4];
         Vector3f v1,v2;
-        CoordinateSystem(ray.d, &v1, &v2);
+        // we would like to make start point always on the left side , 
+        // that way we could determine the order of cross product for edge function
+        v1 = common->cpOjb[3] - common->cpOjb[0]; 
+        v1 = v1 - Dot(v1, ray.d) * ray.d;
+        v1 = Normalize(v1);
+        v2 = Normalize(Cross(v1, ray.d));
+        //LookAt row major
         Transform object2Ray(Matrix4f(
-            v1.x, v2.x, ray.d.x, -ray.o.x,
-            v1.y, v2.y, ray.d.y, -ray.o.y,
-            v1.z, v2.z, ray.d.z, -ray.o.z,
+            v1.x, v1.y, v1.z, -Dot(v1, Vector3f(ray.o)),
+            v2.x, v2.y, v2.z, -Dot(v2, Vector3f(ray.o)),
+            ray.d.x, ray.d.y, ray.d.z, -Dot(ray.d, Vector3f(ray.o)),
             0.f, 0.f, 0.f, 1.f));
 
         ctlPoint[0] = object2Ray(BlossomBezier(common->cpOjb, uMin, uMin, uMin));
@@ -86,7 +92,77 @@ bool Curve::Intersect(const Ray &r, Float *tHit,
  bool Curve::recursiveIntersect(const Ray &ray, Float *tHit, 
         SurfaceInteraction *isect, Point3f* cp, Transform ray2Object, 
         Float uMin, Float uMax, int maxDepth) const {
-            
+            Bounds3f box = Union(Bounds3f(cp[0], cp[1]), Bounds3f(cp[2], cp[3]));
+            if (!box._intersect_p(ray, NULL, NULL)) {
+                return false;
+            }
+            if(maxDepth > 0) {
+                Point3f ctlPoint[7];
+                Point3f *cps = ctlPoint;
+                Float uu[3] = {
+                    uMin,
+                    (uMin + uMax) / 2,
+                    uMax
+                };
+                Float *up = uu;
+                SubdivideBezier(cp, ctlPoint);
+                bool hit = false;
+                for (int i = 0; i < 2 ; i++, cps+=3, up++) {
+                    Float maxWidth = std::max(
+                        Lerp(up[0], common->width[0], common->width[1]),
+                        Lerp(up[1], common->width[0], common->width[1])  
+                    );
+                    if (std::max(std::max(cps[0].y, cps[1].y), 
+                            std::max(cps[2].y, cps[3].y)) + 0.5 * maxWidth < 0.f
+                        || std::min(std::min(cps[0].y, cps[1].y), 
+                            std::min(cps[2].y, cps[3].y)) - 0.5 * maxWidth > 0.f) {
+                               continue;
+                            }
+
+                    if (std::max(std::max(cps[0].x, cps[1].x), 
+                            std::max(cps[2].x, cps[3].x)) + 0.5 * maxWidth < 0.f
+                        || std::min(std::min(cps[0].x, cps[1].x), 
+                            std::min(cps[2].x, cps[3].x)) - 0.5 * maxWidth > 0.f) {
+                                continue;
+                            }
+                    
+                    Float rayLength = ray.d.length() * ray.tMax;
+                    if (std::max(std::max(cps[0].z, cps[1].z), 
+                            std::max(cps[2].z, cps[3].z)) + 0.5 * maxWidth < 0.f
+                        || std::min(std::min(cps[0].z, cps[1].z), 
+                            std::min(cps[2].z, cps[3].z)) - 0.5 * maxWidth > rayLength) {
+                                continue;
+                            }
+                    hit |= recursiveIntersect(ray, tHit, isect, cps, ray2Object, up[0], up[1], maxDepth - 1);
+                    return hit;
+                }
+            } else {
+                // hit point vector cross bitangent should be z positive (we adjust the ray coordinate system to make sure the start
+                // point's x coordinate is smaller than end point's x coordinate system which make shoule the anti clock wise cross product produce positive z
+                // if the hit point is on the right side of start point's bitangent)
+                Float e1 = (cp[1].y - cp[0].y) * cp[0].x - (cp[1].x - cp[0].x) * cp[0].y; 
+                if (e1 < 0) {
+                    return false;
+                }
+                // same as e1 but we adjust the cross product order , since the hit point should be left side of end point's bitangent
+                Float e2 = (cp[3].x - cp[2].x) * cp[3].y - (cp[3].y - cp[2].y) * cp[3].x;
+                if (e2 < 0) {
+                    return false;
+                }
+                
+                // calculete the parameter u where the point is closest to ray
+                Vector2f v1 = Vector2f(cp[3] - cp[0]);
+                Vector2f v2(-v1.y, v1.x);
+                Float e = (cp[3].y - cp[0].y) * cp[0].x - (cp[3].x - cp[0].x) * cp[0].x;
+                if (e > 0) {
+                    v2 = -v2;
+                }
+                Float x = (cp[0].y / v2.y - cp[0].x / v2.x) / (v1.x / v2.x - v1.y / v2.y);
+                Float u = (cp[3].x - x) / (cp[3].x - cp[0].x);
+
+                //test curve width 
+                
+            }
 
     };
         
