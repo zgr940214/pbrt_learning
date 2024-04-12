@@ -33,9 +33,6 @@ class Curve : public Shape {
         bool Intersect(const Ray &ray, Float *tHit, 
             SurfaceInteraction *isect, bool testAlphaTexture = true) const;
         
-        bool IntersectP(const Ray &ray,
-            bool testAlphaTexture = true) const;
-        
         bool recursiveIntersect(const Ray &ray, Float *tHit, 
             SurfaceInteraction *isect, Point3f* cp, Transform ray2Object,
             Float uMin, Float uMax, int maxDepth) const;
@@ -61,5 +58,21 @@ class Curve : public Shape {
             cpSplit[5] = (p[2] + p[3]) / 2;
             cpSplit[6] = p[3];
         }
+        
+        static Point3f EvalBezier(const Point3f* cp, Float u, Vector3f& dpdu) {
+            Point3f cp1[3] = {
+                Lerp(u, cp[0], cp[1]),
+                Lerp(u, cp[1], cp[2]),
+                Lerp(u, cp[2], cp[3])
+            };
+            
+            Point3f cp2[2] = {
+                Lerp(u, cp1[0], cp1[1]),
+                Lerp(u, cp1[1], cp1[2])
+            };
+
+            dpdu = (Float)3 * (cp2[1] - cp2[0]);
+            return Point3f(Lerp(u, cp2[0], cp2[1]));
+        };
 };
 }

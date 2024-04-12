@@ -152,28 +152,95 @@ bool Curve::Intersect(const Ray &r, Float *tHit,
                 
                 // calculete the parameter u where the point is closest to ray
                 Vector2f v1 = Vector2f(cp[3] - cp[0]);
-                Vector2f v2(-v1.y, v1.x);
-                Float e = (cp[3].y - cp[0].y) * cp[0].x - (cp[3].x - cp[0].x) * cp[0].x;
-                if (e > 0) {
-                    v2 = -v2;
-                }
-                Float x = (cp[0].y / v2.y - cp[0].x / v2.x) / (v1.x / v2.x - v1.y / v2.y);
-                Float u = (cp[3].x - x) / (cp[3].x - cp[0].x);
+                Vector2f v2 = Vector2f(-cp[0].x, cp[0].y);
+                Float w = Dot(v1, v2) / v1.length_squared();
 
+                Float u = Lerp(w, uMin, uMax);
+
+                Float d = Lerp(u, common->width[0], common->width[1]); 
+
+                Float sin0 = std::sin((1 - u) * common->normalAngle) * common->invSinNormalAngle;
+                Float sin1 = std::sin(u * common->normalAngle) * common->invSinNormalAngle;
+                Normal3f nHit = sin0 * common->n[0] + sin1 * common->n[1];
                 //test curve width 
+                if (common->type == CurveType::RIBBON) {
+                    Float cosTheta = Dot(nHit, ray.d) / ray.d.length(); // Slerp keeps normal length unchanged
+                    d *= cosTheta; 
+                }
+
+                Point3f pHit = BlossomBezier(common->cpOjb, u, u, u);
+                if (Vector2f(pHit.x, pHit.y).length() > d / 2) {
+                    return false;
+                }
+
+                Float t = pHit.z;
+                if (t < 0 || t > ray.tMax) {
+                    return false;
+                }
+
+                if (tHit) {
+                    *tHit = t;
+                }
+
+                Float edge = v2.x * v1.y - v2.y * v1.x > 0 ? 1 : -1;
+                Float v = (Vector2f(pHit.x, pHit.y).length() / (d));
+                if (edge < 0) {
+                    v = - 0.5 + v;
+                }
+
+                Vector3f dpdu, dpdv;
+                EvalBezier(common->cpOjb, u, dpdu);
+                if (common->type == CurveType::RIBBON) {
+                    dpdv = Normalize(Cross(nHit, dpdu)) * d;
+                } else if (common->type == CurveType::FLAT) {
+                    dpdv = Normalize(Cross(ray.d, dpdu)) * d;
+                } else { // cylinder
+                    dpdv = Normalize(Cross(ray.d, dpdu)) * d;
+                    // rotate the dpdv along dpdu over theta
+                    Float cosTheta, sinTheta;
+                    if (v < 0) {
+                        cosTheta = (0.5 + v) / (d / 2);
+                    } else {
+                        cosTheta =  2 * v / d;
+                    }
+                    sinTheta = std::sqrt(1 - cosTheta * cosTheta);
+                    //Rodrigues
+                    Vector3f K = Normalize(dpdu);
+
+                    dpdv = dpdv * cosTheta + Cross(K, dpdv) * sinTheta + Dot(K, dpdv) * (1 - cosTheta) * K;
+                    dpdv = Normalize(dpdv);
+                    dpdv /= sinTheta;
+                }
+
+                Vector3f pErr;
+                //calculate error bound
+                *isect = SurfaceInteraction(pHit,
+                    pErr, Point2f(u, v), -ray.d, 
+                    dpdu, dpdv, Normal3f(0.f, 0.f, 0.f),
+                    Normal3f(0.f, 0.f, 0.f), ray.time, this);
                 
+                return true;
+
             }
 
     };
         
-
-bool Curve::IntersectP(const Ray &ray,
-    bool testAlphaTexture = true) const {
-
-    };
-
 Float Curve::SurfaceArea() const {
-    
+    Point3f cp[4];
+    cp[0] = BlossomBezier(common->cpOjb, uMin, uMin, uMin);
+    cp[1] = BlossomBezier(common->cpOjb, uMin, uMin, uMax);
+    cp[2] = BlossomBezier(common->cpOjb, uMin, uMax, uMax);
+    cp[3] = BlossomBezier(common->cpOjb, uMax, uMax, uMax);
+
+    Float w0 = Lerp(uMin, common->width[0], common->width[1]);
+    Float w1 = Lerp(uMax, common->width[0], common->width[1]);
+
+    Float averageWidth = (w0 + w1) / 2;
+    Float eLength = 0.f;
+    for (int i = 0; i < 3; i++) {
+        eLength += Distance(cp[i], cp[i + 1]);
+    }
+    return eLength * averageWidth;
 };
 
 }

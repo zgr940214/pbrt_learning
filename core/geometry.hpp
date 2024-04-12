@@ -506,6 +506,11 @@ class Normal3 {
             return m;
         };
 
+        Normal3<Ty> operator+(const Normal3<Ty> &v) const {
+            Normal3<Ty> m(x + v.x, y + v.y, z + v.z);
+            return m;
+        };
+
         Normal3<Ty> & operator+=(const Vector3<Ty> &v) {
             x += v.x;
             y += v.y;
