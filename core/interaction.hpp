@@ -1,5 +1,7 @@
+#pragma once
 #include "geometry.hpp"
 #include "shape.hpp"
+#include "primitive.hpp"
 
 namespace eric {
 
@@ -39,6 +41,7 @@ class SurfaceInteraction : public Interaction {
         Vector3f dpdu, dpdv;
         Normal3f dndu, dndv;
         const Shape *shape = nullptr;
+        const Primitive * primitive = nullptr;
         struct {
             Normal3f n;
             Vector3f dpdu, dpdv;

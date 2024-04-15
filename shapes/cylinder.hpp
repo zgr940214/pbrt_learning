@@ -1,3 +1,4 @@
+#pragma once
 #include "core/math.hpp"
 #include "core/shape.hpp"
 
