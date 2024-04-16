@@ -478,7 +478,7 @@ Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
   return Transform(camera2Wld);
 };
 
-class AnimationTransform {
+class AnimatedTransform {
  private:
   struct DerivativeTerm {
     Float kc, kx, ky, kz;
@@ -501,7 +501,7 @@ class AnimationTransform {
   DerivativeTerm c1[3], c2[3], c3[3], c4[3], c5[3];
 
  public:
-  AnimationTransform(const Transform *s, const Transform *e, Float start,
+  AnimatedTransform(const Transform *s, const Transform *e, Float start,
                      Float end)
       : startTransform(s),
         endTransform(e),
@@ -1202,7 +1202,7 @@ class AnimationTransform {
     }
   }
 
-  ~AnimationTransform(){};
+  ~AnimatedTransform(){};
 
   void Decompose(const Transform *t, Vector3f *T, Quaternion *R, Matrix4f *S);
 

@@ -51,7 +51,7 @@ bool IsEqual(const Transform &t1, const Transform &t2) {
     return t1 == t2;
 };
 
-void AnimationTransform::Decompose(const Transform* t, Vector3f *T, Quaternion *R, Matrix4f *S) {
+void AnimatedTransform::Decompose(const Transform* t, Vector3f *T, Quaternion *R, Matrix4f *S) {
     assert(t != NULL);
     Matrix4f m(t->m);
     // T
@@ -92,7 +92,7 @@ void AnimationTransform::Decompose(const Transform* t, Vector3f *T, Quaternion *
     *S = Matrix4f::Mul(RInv, m);
 };
 
-void AnimationTransform::Interpolate(Float time, Transform* t) const{
+void AnimatedTransform::Interpolate(Float time, Transform* t) const{
     Transform T, R, S;
 
     if (!actuallyAnimated || time < startTime) {
@@ -129,7 +129,7 @@ void AnimationTransform::Interpolate(Float time, Transform* t) const{
     *t = T * R * S;
 };
 
-Bounds3f AnimationTransform::BoundPointMotion(const Point3f& p) const {
+Bounds3f AnimatedTransform::BoundPointMotion(const Point3f& p) const {
     Bounds3f bounds((*startTransform)(p), (*endTransform)(p));
     Float cosTheta = Dot(R[0], R[1]);
     Float theta = std::acos(Clamp(cosTheta, -1, 1));
@@ -152,7 +152,7 @@ Bounds3f AnimationTransform::BoundPointMotion(const Point3f& p) const {
     return bounds;
 };
 
-Bounds3f AnimationTransform::MotionBounds(const Bounds3f& b) const{
+Bounds3f AnimatedTransform::MotionBounds(const Bounds3f& b) const{
     if (!actuallyAnimated) {
         return (*startTransform)(b);
     } else if (!hasRotation) {
@@ -173,28 +173,28 @@ Bounds3f AnimationTransform::MotionBounds(const Bounds3f& b) const{
     }
 };
 
-Point3f AnimationTransform::operator()(Float time, const Point3f &p) {
+Point3f AnimatedTransform::operator()(Float time, const Point3f &p) {
     Transform f;
     Interpolate(time, &f);
     Point3f pp(p);
     return f(pp);
 };
     
-Vector3f AnimationTransform::operator()(Float time, const Vector3f &v) {
+Vector3f AnimatedTransform::operator()(Float time, const Vector3f &v) {
     Transform f;
     Interpolate(time, &f);
     Vector3f vv(v);
     return f(vv);
 };
 
-Ray AnimationTransform::operator()(const Ray &r) {
+Ray AnimatedTransform::operator()(const Ray &r) {
     Transform f;
     Interpolate(r.time, &f);
     Ray rr(r);
     return f(rr);
 };
 
-RayDifferential AnimationTransform::operator()(const RayDifferential &r) {
+RayDifferential AnimatedTransform::operator()(const RayDifferential &r) {
     Transform f;
     Interpolate(r.time, &f);
     RayDifferential rr(r);
